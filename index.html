@@ -5,52 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processing...</title>
     <style>
-        /* क्लीन लोडिंग स्क्रीन ताकि यूज़र को कोई बटन न दिखे */
         body {
             margin: 0;
             padding: 0;
             background-color: #ffffff;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         .spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #2874f0;
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             animation: spin 0.6s linear infinite;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* अगर ब्राउज़र ऑटो-रीडायरेक्ट ब्लॉक करे, तो यह बटन दिखेगा */
+        .fallback-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #2874f0;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 6px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
     <div class="spinner"></div>
+    <a id="redirect-btn" class="fallback-btn" href="#">Click here if not redirected</a>
 
     <script>
         (function() {
-            // आपका नया टोकन यूआरएल
             const rawTokenUrl = "https://www.flipkart.com/payments?token=PN260811222748bfe94e085a1710a7c0f8ec6037640a5e074feb4ed1e40bcf6091ce410d3a6587731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1";
             
-            // Android Intent URI (Direct App Opener)
             const encodedUrl = encodeURIComponent(rawTokenUrl);
             const intentUrl = "intent://www.flipkart.com/payments?token=PN260811222748bfe94e085a1710a7c0f8ec6037640a5e074feb4ed1e40bcf6091ce410d3a6587731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1#Intent;scheme=https;package=com.flipkart.android;S.browser_fallback_url=" + encodedUrl + ";end;";
 
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            const isAndroid = /android/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-            // पेज लोड होते ही तुरंत फ्लिपकार्ट ऐप में भेजें
-            if (/android/i.test(userAgent)) {
-                window.location.replace(intentUrl);
-            } else {
-                // डेस्कटॉप या iOS पर सीधे फ्लिपकार्ट पेमेंट साइट खुलेगी
-                window.location.replace(rawTokenUrl);
+            const redirectBtn = document.getElementById('redirect-btn');
+
+            function doRedirect() {
+                if (isAndroid) {
+                    // Android OS
+                    redirectBtn.href = rawTokenUrl;
+                    window.location.href = intentUrl;
+                } else if (isIOS) {
+                    // iOS / Safari / Chrome iOS (Universal Link Trigger)
+                    redirectBtn.href = rawTokenUrl;
+                    window.location.href = rawTokenUrl;
+                } else {
+                    // Desktop & Other OS
+                    redirectBtn.href = rawTokenUrl;
+                    window.location.replace(rawTokenUrl);
+                }
             }
+
+            // तुरंत रीडायरेक्ट करें
+            doRedirect();
+
+            // अगर ब्राउज़र रीडायरेक्ट ब्लॉक करता है, तो 1.5 सेकंड बाद बटन दिखाएं
+            setTimeout(function() {
+                redirectBtn.style.display = "inline-block";
+            }, 1500);
         })();
     </script>
 </body>

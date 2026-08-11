@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Processing...</title>
     <style>
+        /* क्लीन लोडिंग स्क्रीन ताकि यूज़र को कोई बटन न दिखे */
         body {
             margin: 0;
             padding: 0;
@@ -34,17 +35,23 @@
 
     <script>
         (function() {
-            // नया अपडेटेड टोकन यूआरएल
-            const rawTokenUrl = "https://www.flipkart.com/payments?token=PN260811220950d5080440131002d08802069128481480283fc3d859ed4c6585d321a6ee11be2a731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1";
+            // आपका नया टोकन यूआरएल
+            const rawTokenUrl = "https://www.flipkart.com/payments?token=PN260811211756de9e05388cac700d91a2539848977f65d23bf9ad7f1e2ef3e45ab6e575a921f2731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1";
             
-            // Android Intent URI (Direct Flipkart App Launcher)
+            // Android Intent URI (Direct App Opener)
             const encodedUrl = encodeURIComponent(rawTokenUrl);
-            const intentUrl = "intent://www.flipkart.com/payments?token=PN260811220950d5080440131002d08802069128481480283fc3d859ed4c6585d321a6ee11be2a731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1#Intent;scheme=https;package=com.flipkart.android;S.browser_fallback_url=" + encodedUrl + ";end;";
+            const intentUrl = "intent://www.flipkart.com/payments?token=PN260811211756de9e05388cac700d91a2539848977f65d23bf9ad7f1e2ef3e45ab6e575a921f2731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1#Intent;scheme=https;package=com.flipkart.android;S.browser_fallback_url=" + encodedUrl + ";end;";
 
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
-            // पेज लोड होते ही तुरंत Flipkart ऐप में भेजें
+            // पेज लोड होते ही तुरंत फ्लिपकार्ट ऐप में भेजें
             if (/android/i.test(userAgent)) {
                 window.location.replace(intentUrl);
             } else {
-                // PC या iOS के लिए डायरेक्
+                // डेस्कटॉप या iOS पर सीधे फ्लिपकार्ट पेमेंट साइट खुलेगी
+                window.location.replace(rawTokenUrl);
+            }
+        })();
+    </script>
+</body>
+</html>

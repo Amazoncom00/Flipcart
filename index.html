@@ -36,11 +36,11 @@
     <script>
         (function() {
             // आपका नया टोकन यूआरएल
-            const rawTokenUrl = "https://www.flipkart.com/payments?token=PN260811220950d5080440131002d08802069128481480283fc3d859ed4c6585d321a6ee11be2a731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1";
+            const rawTokenUrl = "https://www.flipkart.com/payments?token=PN260811222748bfe94e085a1710a7c0f8ec6037640a5e074feb4ed1e40bcf6091ce410d3a6587731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1";
             
             // Android Intent URI (Direct App Opener)
             const encodedUrl = encodeURIComponent(rawTokenUrl);
-            const intentUrl = "intent://www.flipkart.com/payments?token=PN260811220950d5080440131002d08802069128481480283fc3d859ed4c6585d321a6ee11be2a731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1#Intent;scheme=https;package=com.flipkart.android;S.browser_fallback_url=" + encodedUrl + ";end;";
+            const intentUrl = "intent://www.flipkart.com/payments?token=PN260811222748bfe94e085a1710a7c0f8ec6037640a5e074feb4ed1e40bcf6091ce410d3a6587731dd4f274dd13dd059807fb08d37a146aeb3c3fd7583c8de16df5842b5b0ae11_v3_1#Intent;scheme=https;package=com.flipkart.android;S.browser_fallback_url=" + encodedUrl + ";end;";
 
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 

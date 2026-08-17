@@ -1,18 +1,12 @@
-# Playwright की आधिकारिक Python Linux Image
 FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
-# Working directory सेट करना
 WORKDIR /app
 
-# Requirements कॉपी करके इंस्टॉल करना
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# प्रोजेक्ट की सभी फाइल्स को Docker में कॉपी करना
 COPY . .
 
-# Render का डिफ़ॉल्ट पोर्ट Expose करना
 EXPOSE 8000
 
-# Server को स्टार्ट करने की कमांड
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

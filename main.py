@@ -43,56 +43,63 @@ async def send_phone(payload: PhonePayload):
             session_store.clear()
 
         p = await async_playwright().start()
-        # Headless mode me Bot bypass karne ke liye args
         browser = await p.chromium.launch(
             headless=True,
             args=[
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                '--disable-blink-features=AutomationControlled'
+                '--disable-blink-features=AutomationControlled',
+                '--disable-infobars',
+                '--window-size=1280,720'
             ]
         )
         
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 720}
+            viewport={"width": 1280, "height": 720},
+            locale="en-US,en"
         )
         page = await context.new_page()
 
-        # Stealth Script to hide Playwright
+        # Hide WebDriver automation flags
         await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-        await page.goto(LOGIN_URL, timeout=60000, wait_until="networkidle")
+        await page.goto(LOGIN_URL, timeout=60000, wait_until="domcontentloaded")
+        await asyncio.sleep(2)
 
-        # Select Phone Input Box
-        phone_input = page.locator("form input[type='text']").first
+        # Phone Input Selectors
+        phone_input = page.locator("form input[type='text'], input[type='tel']").first
         await phone_input.click()
-        
-        # Human Typing Speed (bot protection bypass)
-        await phone_input.type(payload.phone, delay=120)
+        await phone_input.fill("")
+        await phone_input.type(payload.phone, delay=150)
 
-        # Click Request OTP button
+        # Click Request OTP
         btn = page.locator("button:has-text('Request OTP'), button:has-text('CONTINUE')").first
         if await btn.is_visible():
             await btn.click()
         else:
             await page.keyboard.press("Enter")
 
-        # Wait for actual SMS trigger response
-        await asyncio.sleep(3)
+        await asyncio.sleep(4)
+
+        # Check if Flipkart blocked or showed error on screen
+        page_content = await page.content()
+        if "Please enter valid Mobile number" in page_content or "CAPTCHA" in page_content:
+            await browser.close()
+            return {"status": "error", "message": "Flipkart ने बॉट डिटेक्शन या अमान्य नंबर के कारण ब्लॉक किया!"}
 
         session_store["playwright"] = p
         session_store["browser"] = browser
         session_store["context"] = context
         session_store["page"] = page
 
-        return {"status": "otp_required", "message": "Flipkart से OTP भेज दिया गया है। फोन चेक करें!"}
+        return {"status": "otp_required", "message": "OTP रिक्वेस्ट भेजी गई। अगर SMS आए तो दर्ज करें!"}
 
     except Exception as e:
         if "browser" in session_store:
             await session_store["browser"].close()
             session_store.clear()
-        return {"status": "error", "message": f"OTP भेजने में विफलता: {str(e)}"}
+        return {"status": "error", "message": f"फ़ोन नंबर सबमिट करने में विफल: {str(e)}"}
 
 @app.post("/api/verify-otp")
 async def verify_otp(payload: OtpPayload):
@@ -103,7 +110,7 @@ async def verify_otp(payload: OtpPayload):
         page = session_store["page"]
         context = session_store["context"]
 
-        # Type OTP digit by digit
+        # Fill OTP
         otp_inputs = page.locator("input[maxlength='1']")
         count = await otp_inputs.count()
 
@@ -118,10 +125,23 @@ async def verify_otp(payload: OtpPayload):
         verify_btn = page.locator("button:has-text('VERIFY'), button:has-text('Login'), button[type='submit']").first
         await verify_btn.click()
 
-        await page.wait_for_timeout(4000)
+        await asyncio.sleep(4)
 
-        # Save session cookies
+        # --- STRICT VERIFICATION (CHECK IF FLIPKART ACCEPTED OTP) ---
+        page_text = await page.content()
+
+        # 1. Look for explicit failure text
+        if "Incorrect OTP" in page_text or "Please enter valid OTP" in page_text or "Invalid OTP" in page_text:
+            return {"status": "error", "message": "गलत OTP! Flipkart ने इसे अमान्य कर दिया।"}
+
+        # 2. Check if login was actually successful (looking for Account elements or cookie auth)
         cookies = await context.cookies()
+        auth_cookie_found = any(c['name'] in ['SN', 'at', 'S', 'T'] for c in cookies)
+
+        if not auth_cookie_found and "account" not in page.url.lower():
+            return {"status": "error", "message": "लॉगिन असफलता: OTP सत्यापन पास नहीं हुआ!"}
+
+        # Save cookies ONLY if valid auth session confirmed
         with open(COOKIE_FILE, "w") as f:
             json.dump(cookies, f, indent=2)
 
@@ -129,7 +149,7 @@ async def verify_otp(payload: OtpPayload):
         await session_store["playwright"].stop()
         session_store.clear()
 
-        return {"status": "success", "message": "लॉगिन सफल! कुकीज़ सेव हो गई हैं।"}
+        return {"status": "success", "message": "असली लॉगिन सफल हुआ! सेषन कुकीज़ सुरक्षित कर ली गई हैं।"}
 
     except Exception as e:
         if "browser" in session_store:
